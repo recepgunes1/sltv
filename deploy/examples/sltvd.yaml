@@ -1,0 +1,40 @@
+# Example sltvd configuration. See docs/configuration.md for the
+# full reference.
+
+listen:
+  unix: /run/sltv/sltvd.sock
+  # Enable TCP only when TLS is configured.
+  tcp: ""
+
+tls:
+  cert: ""
+  key: ""
+  ca: ""
+
+storage:
+  state_dir: /var/lib/sltv
+  default_vg: vg-sltv
+
+libvirt:
+  uri: qemu:///system
+
+thin:
+  default_initial_size: 10GiB
+  free_threshold_percent: 10
+  extend_step_percent: 10
+  poll_interval: 15s
+
+cluster:
+  enabled: false
+  # node_id: ""    # defaults to hostname
+  etcd:
+    endpoints: []
+    lock_ttl: 10s
+    tls:
+      cert: ""
+      key: ""
+      ca: ""
+
+log:
+  level: info
+  format: json

@@ -1,0 +1,32 @@
+[Unit]
+Description=SLTV (Shared Logical Thin Volume) daemon
+Documentation=https://github.com/sltv/sltv
+After=network-online.target libvirtd.service
+Wants=network-online.target
+Requires=libvirtd.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/sltvd -config /etc/sltv/sltvd.yaml
+Restart=on-failure
+RestartSec=5
+
+# sltvd needs root to talk to libvirt and run lvm2 binaries.
+User=root
+Group=root
+
+# Hardening - relax these only if a particular feature requires it.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/sltv /run/sltv /run/libvirt /etc/lvm
+PrivateTmp=true
+
+# Allow writing to /dev/<vg>/<lv> block devices.
+DeviceAllow=block-* rw
+DevicePolicy=strict
+
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

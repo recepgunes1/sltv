@@ -1,0 +1,60 @@
+# SLTV end-to-end test infrastructure
+#
+# This Vagrantfile spins up:
+#   - 1 storage VM       (sltv-target)  exposing two iSCSI LUNs over targetcli.
+#   - 3 ETCD VMs         (sltv-etcd1..3)  forming a 3-node cluster.
+#   - 3 hypervisor VMs   (sltv-host1..3)  running libvirtd, lvm2, sltvd.
+#
+# All VMs share a private network (192.168.56.0/24) plus host-only NAT
+# for outbound package installs.
+#
+# Required: Vagrant + libvirt provider (or VirtualBox; libvirt is
+# preferred for nested KVM). See docs/testing.md for usage.
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "generic/ubuntu2204"
+  config.vm.synced_folder "../..", "/vagrant", type: "rsync",
+    rsync__exclude: ["bin/", ".git/", "test/e2e/vagrant/.vagrant/"]
+
+  # ---------------- iSCSI target ----------------
+  config.vm.define "sltv-target" do |node|
+    node.vm.hostname = "sltv-target"
+    node.vm.network "private_network", ip: "192.168.56.10"
+    node.vm.provider :libvirt do |v|
+      v.memory = 1024
+      v.cpus = 2
+      v.storage :file, size: "30G", bus: "virtio"
+    end
+    node.vm.provision "shell", path: "scripts/provision-target.sh"
+  end
+
+  # ---------------- ETCD cluster ----------------
+  (1..3).each do |i|
+    config.vm.define "sltv-etcd#{i}" do |node|
+      node.vm.hostname = "sltv-etcd#{i}"
+      node.vm.network "private_network", ip: "192.168.56.#{20 + i}"
+      node.vm.provider :libvirt do |v|
+        v.memory = 768
+        v.cpus = 1
+      end
+      node.vm.provision "shell", path: "scripts/provision-etcd.sh",
+        env: { "ETCD_NODE_INDEX" => i.to_s }
+    end
+  end
+
+  # ---------------- sltv hosts ----------------
+  (1..3).each do |i|
+    config.vm.define "sltv-host#{i}" do |node|
+      node.vm.hostname = "sltv-host#{i}"
+      node.vm.network "private_network", ip: "192.168.56.#{30 + i}"
+      node.vm.provider :libvirt do |v|
+        v.memory = 4096
+        v.cpus = 2
+        v.nested = true                         # nested KVM
+        v.cpu_mode = "host-passthrough"
+      end
+      node.vm.provision "shell", path: "scripts/provision-host.sh",
+        env: { "SLTV_NODE_INDEX" => i.to_s }
+    end
+  end
+end

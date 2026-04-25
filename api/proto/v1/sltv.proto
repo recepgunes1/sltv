@@ -1,0 +1,165 @@
+// Copyright (c) 2026 SLTV authors. Licensed under the MIT License.
+
+syntax = "proto3";
+
+// Package sltv.v1 is the public gRPC API exposed by the sltvd daemon
+// (Shared Logical Thin Volume). Clients such as sctl talk to sltvd
+// through this service.
+package sltv.v1;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/sltv/sltv/api/proto/v1;sltvv1";
+
+// ProvisionMode indicates whether a disk is fully allocated up-front
+// (THICK) or grows on demand by extending its backing logical volume
+// (THIN).
+enum ProvisionMode {
+  PROVISION_MODE_UNSPECIFIED = 0;
+  PROVISION_MODE_THICK = 1;
+  PROVISION_MODE_THIN = 2;
+}
+
+// Disk represents a single LVM-backed disk managed by sltvd.
+message Disk {
+  // Unique disk name (also the LV name).
+  string name = 1;
+  // Volume group the LV lives in.
+  string vg = 2;
+  // Provisioning mode.
+  ProvisionMode mode = 3;
+  // Physical size of the backing LV in bytes.
+  uint64 size_bytes = 4;
+  // Virtual (guest-visible) size in bytes. Equals size_bytes for THICK.
+  uint64 virtual_size_bytes = 5;
+  // Path to the backing block device, e.g. /dev/vg-sltv/web01-data.
+  string device_path = 6;
+  // Node that initially created the disk (informational).
+  string created_on_node = 7;
+  // Creation timestamp.
+  google.protobuf.Timestamp created_at = 8;
+  // Last extend timestamp (THIN only). Zero if never extended.
+  google.protobuf.Timestamp last_extended_at = 9;
+}
+
+// Attachment describes a disk attached to a libvirt domain on a host.
+message Attachment {
+  string disk_name = 1;
+  string vm_name = 2;
+  // Host (sltvd node) where the libvirt domain runs.
+  string host = 3;
+  // Target device inside the guest, e.g. "vdb".
+  string target_dev = 4;
+  // Attachment timestamp.
+  google.protobuf.Timestamp attached_at = 5;
+}
+
+// NodeStatus is reported by the local sltvd instance.
+message NodeStatus {
+  string node_id = 1;
+  string version = 2;
+  bool cluster_enabled = 3;
+  // Volume groups visible on this node.
+  repeated VolumeGroup vgs = 4;
+}
+
+// VolumeGroup is a slimmed-down representation of LVM `vgs` output.
+message VolumeGroup {
+  string name = 1;
+  uint64 size_bytes = 2;
+  uint64 free_bytes = 3;
+}
+
+// ClusterStatus aggregates the state of all known sltvd peers and the
+// shared catalog.
+message ClusterStatus {
+  bool enabled = 1;
+  string leader = 2;
+  repeated NodeStatus nodes = 3;
+  uint32 disk_count = 4;
+  uint32 attachment_count = 5;
+}
+
+// CreateDiskRequest is the input for Sltv.CreateDisk.
+message CreateDiskRequest {
+  string name = 1;
+  // Optional VG. When empty, the daemon's configured default_vg is used.
+  string vg = 2;
+  // Provisioning mode. Defaults to THICK if unspecified.
+  ProvisionMode mode = 3;
+  // For THICK: the LV size in bytes. For THIN: the initial LV size in
+  // bytes. May be 0 to use the configured default_initial_size.
+  uint64 size_bytes = 4;
+  // For THIN: the guest-visible size in bytes. Required when mode=THIN.
+  uint64 virtual_size_bytes = 5;
+}
+
+message DeleteDiskRequest {
+  string name = 1;
+  // When true, detach from any attached VMs first.
+  bool force = 2;
+}
+
+message GetDiskRequest { string name = 1; }
+
+message ListDisksRequest {
+  // Optional filter by volume group.
+  string vg = 1;
+}
+
+message ListDisksResponse { repeated Disk disks = 1; }
+
+message ExtendDiskRequest {
+  string name = 1;
+  // Absolute new size in bytes; mutually exclusive with delta_bytes.
+  uint64 size_bytes = 2;
+  // Relative growth in bytes; mutually exclusive with size_bytes.
+  uint64 delta_bytes = 3;
+}
+
+message AttachDiskRequest {
+  string disk_name = 1;
+  string vm_name = 2;
+  // Optional target device name; auto-picked when empty.
+  string target_dev = 3;
+}
+
+message DetachDiskRequest {
+  string disk_name = 1;
+  string vm_name = 2;
+}
+
+message ListAttachmentsRequest {
+  string disk_name = 1;
+  string vm_name = 2;
+}
+
+message ListAttachmentsResponse { repeated Attachment attachments = 1; }
+
+// Sltv is the daemon-side service exposed over gRPC.
+service Sltv {
+  // CreateDisk provisions a new logical volume (and qcow2 image when
+  // thin-provisioned) and registers it in the catalog.
+  rpc CreateDisk(CreateDiskRequest) returns (Disk);
+  // DeleteDisk removes the LV after ensuring no attachments remain.
+  rpc DeleteDisk(DeleteDiskRequest) returns (google.protobuf.Empty);
+  // GetDisk returns metadata about a single disk.
+  rpc GetDisk(GetDiskRequest) returns (Disk);
+  // ListDisks returns all known disks, optionally filtered by VG.
+  rpc ListDisks(ListDisksRequest) returns (ListDisksResponse);
+  // ExtendDisk manually grows the backing LV (and notifies QEMU).
+  rpc ExtendDisk(ExtendDiskRequest) returns (Disk);
+
+  // AttachDisk hot-plugs the disk into a libvirt domain (PERSISTENT|LIVE).
+  rpc AttachDisk(AttachDiskRequest) returns (Attachment);
+  // DetachDisk removes the disk from a libvirt domain.
+  rpc DetachDisk(DetachDiskRequest) returns (google.protobuf.Empty);
+  // ListAttachments returns matching attachments.
+  rpc ListAttachments(ListAttachmentsRequest) returns (ListAttachmentsResponse);
+
+  // GetNodeStatus reports the local node's view.
+  rpc GetNodeStatus(google.protobuf.Empty) returns (NodeStatus);
+  // GetClusterStatus reports cluster-wide state when clustering is enabled.
+  rpc GetClusterStatus(google.protobuf.Empty) returns (ClusterStatus);
+}
