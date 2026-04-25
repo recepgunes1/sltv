@@ -1,8 +1,8 @@
 # Binaries
 /bin/
 /dist/
-sltvd
-sctl
+/sltvd
+/sctl
 
 # Go
 *.test
