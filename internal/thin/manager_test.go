@@ -24,7 +24,7 @@ type fakeQemuImg struct{}
 
 func (fakeQemuImg) CreateQcow2(_ context.Context, _ string, _ uint64) error { return nil }
 func (fakeQemuImg) DDOver(_ context.Context, _, _ string) error             { return nil }
-func (fakeQemuImg) RemoveFile(_ string) error                                { return nil }
+func (fakeQemuImg) RemoveFile(_ string) error                               { return nil }
 
 func newServiceFixture(t *testing.T, vm string) (*disk.Service, *libvirtx.FakeClient, store.Store) {
 	t.Helper()

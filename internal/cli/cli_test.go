@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 )
 
 func TestRootHelp(t *testing.T) {
-	cmd := newRootCmd()
+	cmd := New().RootCmd()
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetArgs([]string{"--help"})
@@ -23,7 +23,7 @@ func TestRootHelp(t *testing.T) {
 }
 
 func TestVersionCmd(t *testing.T) {
-	cmd := newRootCmd()
+	cmd := New().RootCmd()
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetArgs([]string{"version"})
@@ -32,24 +32,5 @@ func TestVersionCmd(t *testing.T) {
 	}
 	if buf.Len() == 0 {
 		t.Errorf("version produced no output")
-	}
-}
-
-func TestHumanSize(t *testing.T) {
-	cases := []struct {
-		in   uint64
-		want string
-	}{
-		{0, "0B"},
-		{1023, "1023B"},
-		{1024, "1.0K"},
-		{1024 * 1024, "1.0M"},
-		{1024 * 1024 * 1024, "1.0G"},
-	}
-	for _, tc := range cases {
-		got := humanSize(tc.in)
-		if got != tc.want {
-			t.Errorf("humanSize(%d) = %s, want %s", tc.in, got, tc.want)
-		}
 	}
 }

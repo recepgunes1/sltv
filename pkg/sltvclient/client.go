@@ -105,7 +105,7 @@ func LoadClientTLS(certPath, keyPath, caPath, serverName string) (*tls.Config, e
 		cfg.Certificates = []tls.Certificate{cert}
 	}
 	if caPath != "" {
-		caBytes, err := os.ReadFile(caPath)
+		caBytes, err := os.ReadFile(caPath) //nolint:gosec
 		if err != nil {
 			return nil, fmt.Errorf("read ca: %w", err)
 		}

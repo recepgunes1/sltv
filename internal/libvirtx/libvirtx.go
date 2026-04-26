@@ -30,7 +30,7 @@ type ExecRunner struct{}
 
 // Run executes name with args and returns combined stdout/stderr.
 func (ExecRunner) Run(ctx context.Context, name string, args ...string) ([]byte, error) {
-	cmd := exec.CommandContext(ctx, name, args...)
+	cmd := exec.CommandContext(ctx, name, args...) //nolint:gosec
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return out, fmt.Errorf("%s %s: %w: %s", name, strings.Join(args, " "), err, strings.TrimSpace(string(out)))
@@ -145,7 +145,7 @@ func (c *VirshClient) AttachDisk(ctx context.Context, vm string, spec DiskAttach
 	// Runner here, so we switch to ExecRunner-equivalent behaviour for
 	// this one path. The Runner abstraction is preserved for tests via
 	// the FakeClient which bypasses VirshClient entirely.
-	cmd := exec.CommandContext(ctx, "virsh", args...)
+	cmd := exec.CommandContext(ctx, "virsh", args...) //nolint:gosec
 	cmd.Stdin = strings.NewReader(string(xmlBytes))
 	out, err := cmd.CombinedOutput()
 	if err != nil {

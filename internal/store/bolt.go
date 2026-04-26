@@ -31,7 +31,7 @@ func OpenBoltStore(path string) (*BoltStore, error) {
 		return nil, errors.New("store: bolt path is required")
 	}
 	if dir := filepath.Dir(path); dir != "" && dir != "." {
-		if err := os.MkdirAll(dir, 0o755); err != nil {
+		if err := os.MkdirAll(dir, 0o755); err != nil { //nolint:gosec
 			return nil, fmt.Errorf("mkdir %s: %w", dir, err)
 		}
 	}

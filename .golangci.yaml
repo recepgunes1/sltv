@@ -1,0 +1,36 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - misspell
+    - revive
+    - gocritic
+    - gosec
+  settings:
+    revive:
+      rules:
+        - name: exported
+          severity: warning
+          disabled: false
+        - name: package-comments
+          severity: warning
+          disabled: false
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - gosec
+          - revive
+
+formatters:
+  enable:
+    - gofmt
+    - goimports

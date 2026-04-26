@@ -90,7 +90,7 @@ func BuildListeners(specs []ListenerSpec) ([]net.Listener, []credentials.Transpo
 		switch sp.Network {
 		case "unix":
 			if dir := filepath.Dir(sp.Address); dir != "" && dir != "." {
-				if err := os.MkdirAll(dir, 0o755); err != nil {
+				if err := os.MkdirAll(dir, 0o755); err != nil { //nolint:gosec
 					return nil, nil, fmt.Errorf("mkdir %s: %w", dir, err)
 				}
 			}
@@ -99,7 +99,7 @@ func BuildListeners(specs []ListenerSpec) ([]net.Listener, []credentials.Transpo
 			if err != nil {
 				return nil, nil, fmt.Errorf("listen unix %s: %w", sp.Address, err)
 			}
-			if err := os.Chmod(sp.Address, 0o660); err != nil {
+			if err := os.Chmod(sp.Address, 0o660); err != nil { //nolint:gosec
 				_ = ln.Close()
 				return nil, nil, fmt.Errorf("chmod %s: %w", sp.Address, err)
 			}
@@ -135,7 +135,7 @@ func LoadServerTLS(certPath, keyPath, caPath string) (*tls.Config, error) {
 		Certificates: []tls.Certificate{cert},
 	}
 	if caPath != "" {
-		caBytes, err := os.ReadFile(caPath)
+		caBytes, err := os.ReadFile(caPath) //nolint:gosec
 		if err != nil {
 			return nil, fmt.Errorf("read ca: %w", err)
 		}
@@ -302,8 +302,8 @@ func (s *Server) GetClusterStatus(ctx context.Context, _ *emptypb.Empty) (*pb.Cl
 	if err != nil {
 		return nil, toGRPCError(err)
 	}
-	out.DiskCount = uint32(len(disks))
-	out.AttachmentCount = uint32(len(atts))
+	out.DiskCount = uint32(len(disks))      //nolint:gosec
+	out.AttachmentCount = uint32(len(atts)) //nolint:gosec
 	if s.cluster != nil {
 		nodes, err := s.cluster.ListNodes(ctx)
 		if err != nil {

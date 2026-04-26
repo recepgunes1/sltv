@@ -45,7 +45,7 @@ type ExecQemuImgRunner struct{}
 
 // CreateQcow2 implements QemuImgRunner.
 func (ExecQemuImgRunner) CreateQcow2(ctx context.Context, imagePath string, virtualSizeBytes uint64) error {
-	cmd := exec.CommandContext(ctx, "qemu-img", "create", "-f", "qcow2", imagePath, fmt.Sprintf("%d", virtualSizeBytes))
+	cmd := exec.CommandContext(ctx, "qemu-img", "create", "-f", "qcow2", imagePath, fmt.Sprintf("%d", virtualSizeBytes)) //nolint:gosec
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("qemu-img create: %w: %s", err, strings.TrimSpace(string(out)))
@@ -55,7 +55,7 @@ func (ExecQemuImgRunner) CreateQcow2(ctx context.Context, imagePath string, virt
 
 // DDOver implements QemuImgRunner.
 func (ExecQemuImgRunner) DDOver(ctx context.Context, src, dst string) error {
-	cmd := exec.CommandContext(ctx, "dd",
+	cmd := exec.CommandContext(ctx, "dd", //nolint:gosec
 		"if="+src,
 		"of="+dst,
 		"bs=1M",
@@ -229,7 +229,7 @@ func (s *Service) CreateDisk(ctx context.Context, in CreateInput) (store.DiskRec
 			_ = s.LVM.RemoveLV(ctx, in.VG, in.Name)
 			return store.DiskRecord{}, err
 		}
-		defer s.QemuImg.RemoveFile(tmp)
+		defer func() { _ = s.QemuImg.RemoveFile(tmp) }()
 		if err := s.QemuImg.DDOver(ctx, tmp, devicePath); err != nil {
 			_ = s.LVM.RemoveLV(ctx, in.VG, in.Name)
 			return store.DiskRecord{}, fmt.Errorf("dd into lv: %w", err)

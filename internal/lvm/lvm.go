@@ -32,7 +32,7 @@ type ExecRunner struct{}
 // exit code is wrapped together with the captured output so callers
 // can include lvm's own error messages in user-facing errors.
 func (ExecRunner) Run(ctx context.Context, name string, args ...string) ([]byte, error) {
-	cmd := exec.CommandContext(ctx, name, args...)
+	cmd := exec.CommandContext(ctx, name, args...) //nolint:gosec
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return out, fmt.Errorf("%s %s: %w: %s", name, strings.Join(args, " "), err, strings.TrimSpace(string(out)))

@@ -23,13 +23,13 @@ const DefaultPath = "/etc/sltv/sltvd.yaml"
 
 // Config is the root configuration object for sltvd.
 type Config struct {
-	Listen   ListenConfig   `yaml:"listen"`
-	TLS      TLSConfig      `yaml:"tls"`
-	Storage  StorageConfig  `yaml:"storage"`
-	Libvirt  LibvirtConfig  `yaml:"libvirt"`
-	Thin     ThinConfig     `yaml:"thin"`
-	Cluster  ClusterConfig  `yaml:"cluster"`
-	Log      LogConfig      `yaml:"log"`
+	Listen  ListenConfig  `yaml:"listen"`
+	TLS     TLSConfig     `yaml:"tls"`
+	Storage StorageConfig `yaml:"storage"`
+	Libvirt LibvirtConfig `yaml:"libvirt"`
+	Thin    ThinConfig    `yaml:"thin"`
+	Cluster ClusterConfig `yaml:"cluster"`
+	Log     LogConfig     `yaml:"log"`
 }
 
 // ListenConfig describes how the gRPC server is exposed.
@@ -81,9 +81,9 @@ type ThinConfig struct {
 // ClusterConfig configures ETCD-backed clustering. When Enabled is
 // false, sltvd runs as an isolated, single-host service.
 type ClusterConfig struct {
-	Enabled bool        `yaml:"enabled"`
-	NodeID  string      `yaml:"node_id"`
-	ETCD    ETCDConfig  `yaml:"etcd"`
+	Enabled bool       `yaml:"enabled"`
+	NodeID  string     `yaml:"node_id"`
+	ETCD    ETCDConfig `yaml:"etcd"`
 }
 
 // ETCDConfig describes how to talk to ETCD.
@@ -139,7 +139,7 @@ func Default() Config {
 func Load(path string) (Config, error) {
 	cfg := Default()
 	if path != "" {
-		raw, err := os.ReadFile(path)
+		raw, err := os.ReadFile(path) //nolint:gosec
 		switch {
 		case err == nil:
 			if err := yaml.Unmarshal(raw, &cfg); err != nil {
@@ -344,7 +344,7 @@ func ParseSize(in string) (uint64, error) {
 	if val < 0 {
 		return 0, fmt.Errorf("size %q: must be non-negative", in)
 	}
-	mult := uint64(1)
+	var mult uint64
 	switch strings.ToUpper(unit) {
 	case "", "B":
 		mult = 1

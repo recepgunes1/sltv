@@ -80,7 +80,7 @@ func TestManagerEndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager: %v", err)
 	}
-	defer m.Close()
+	defer func() { _ = m.Close() }()
 
 	rel, err := m.Locker().Acquire(ctx, "vg-1")
 	if err != nil {

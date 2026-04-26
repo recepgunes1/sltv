@@ -58,14 +58,14 @@ func newServer(t *testing.T) (*grpc.ClientConn, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	go g.Serve(ln)
+	go func() { _ = g.Serve(ln) }()
 
 	conn, err := grpc.NewClient(ln.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		t.Fatal(err)
 	}
 	return conn, func() {
-		conn.Close()
+		_ = conn.Close()
 		g.GracefulStop()
 	}
 }
@@ -74,7 +74,7 @@ type fakeQemuImg struct{}
 
 func (fakeQemuImg) CreateQcow2(_ context.Context, _ string, _ uint64) error { return nil }
 func (fakeQemuImg) DDOver(_ context.Context, _, _ string) error             { return nil }
-func (fakeQemuImg) RemoveFile(_ string) error                                { return nil }
+func (fakeQemuImg) RemoveFile(_ string) error                               { return nil }
 
 func TestServerCreateAndList(t *testing.T) {
 	conn, stop := newServer(t)

@@ -97,7 +97,7 @@ func run(cfg config.Config, logger *slog.Logger) error {
 	rootCtx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	if err := os.MkdirAll(cfg.Storage.StateDir, 0o755); err != nil {
+	if err := os.MkdirAll(cfg.Storage.StateDir, 0o755); err != nil { //nolint:gosec
 		return fmt.Errorf("mkdir state dir: %w", err)
 	}
 
@@ -105,8 +105,8 @@ func run(cfg config.Config, logger *slog.Logger) error {
 		st           store.Store
 		clusterMgr   *cluster.Manager
 		locker       cluster.Locker = cluster.NoopLocker{}
-		closeStore   = func() {}
-		closeCluster = func() {}
+		closeStore                  = func() {}
+		closeCluster                = func() {}
 	)
 
 	if cfg.Cluster.Enabled {

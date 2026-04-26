@@ -107,7 +107,7 @@ func suite(t *testing.T, s Store) {
 
 func TestMemoryStore(t *testing.T) {
 	s := NewMemoryStore()
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 	suite(t, s)
 }
 
@@ -116,7 +116,7 @@ func TestBoltStore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 	suite(t, s)
 }
 
@@ -138,7 +138,7 @@ func TestBoltStorePersists(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s2.Close()
+	defer func() { _ = s2.Close() }()
 	got, err := s2.GetDisk(context.Background(), "x")
 	if err != nil || got.Name != "x" {
 		t.Fatalf("expected disk x to persist; got %+v err=%v", got, err)

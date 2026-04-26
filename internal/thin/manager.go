@@ -94,7 +94,7 @@ func New(o Options) (*Manager, error) {
 // Stop is called. The Manager is single-shot: once Stop has been
 // invoked, callers must construct a new Manager.
 func (m *Manager) Run(ctx context.Context) {
-	runCtx, cancel := context.WithCancel(ctx)
+	runCtx, cancel := context.WithCancel(ctx) //nolint:gosec
 	m.cancel = cancel
 	m.doneCh = make(chan struct{})
 	defer close(m.doneCh)
